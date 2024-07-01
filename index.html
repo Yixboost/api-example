@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yixboost Games</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Font Awesome icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Custom CSS */
+        .card {
+            margin-bottom: 20px;
+        }
+
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-menu {
+            right: 0;
+            left: auto;
+        }
+
+        #scrollToTopBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 99;
+            font-size: 18px;
+            border: none;
+            outline: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 50%;
+        }
+
+        #scrollToTopBtn:hover {
+            background-color: #555;
+        }
+
+        #searchResults img {
+            height: 100px;
+            width: 100px;
+            object-fit: cover;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-dark text-white py-4">
+        <div class="container header-container">
+            <h1 class="mb-0">Yixboost Games</h1>
+            <div class="d-flex">
+                <!-- Dropdown menu for categories -->
+                <div class="dropdown mt-3 me-3">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Categorieën
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                        <!-- Categories will be dynamically added here -->
+                    </ul>
+                </div>
+                <!-- Search icon -->
+                <button class="btn btn-secondary mt-3" id="searchButton">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container my-5">
+        <div id="gamesList" class="row">
+            <!-- Games will be dynamically added here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3">
+        &copy; 2024 Yixboost Games
+    </footer>
+
+    <!-- Scroll to top button -->
+    <button id="scrollToTopBtn" title="Ga naar boven">&uarr;</button>
+
+    <!-- Search Popup Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">Zoeken</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Voer zoekterm in...">
+                        <button class="btn btn-primary" id="searchSubmitButton" type="button">Zoek</button>
+                    </div>
+                    <div id="searchResults" class="mt-3 d-flex flex-wrap">
+                        <!-- Search results will be displayed here as images -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies (optional if not using Bootstrap JS features) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Debounce function to limit the rate of API calls
+        function debounce(func, delay) {
+            let debounceTimer;
+            return function() {
+                const context = this;
+                const args = arguments;
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        // JavaScript to fetch and display games
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('http://yixboost.nl.eu.org/yixboost/api') // Verander dit naar de juiste API endpoint
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const games = data.data.games;
+                        const gamesList = document.getElementById('gamesList');
+
+                        // Sorteer games op categorie
+                        const sortedGames = {};
+                        games.forEach(game => {
+                            if (!sortedGames[game.category]) {
+                                sortedGames[game.category] = [];
+                            }
+                            sortedGames[game.category].push(game);
+                        });
+
+                        // Voeg games toe aan de DOM, gesorteerd per categorie
+                        Object.keys(sortedGames).forEach(category => {
+                            // Voeg categorieën toe aan het dropdownmenu in de header
+                            const dropdownMenu = document.querySelector('.dropdown-menu');
+                            dropdownMenu.innerHTML += `<li><a class="dropdown-item" href="#${category}">${category}</a></li>`;
+
+                            // Voeg games toe aan de hoofdcontent, gesorteerd per categorie
+                            gamesList.innerHTML += `<h2 id="${category}" class="mt-5">${category}</h2>`;
+                            sortedGames[category].forEach(game => {
+                                const gameCard = `
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="card">
+                                            <img src="${game.image}" class="card-img-top" alt="${game.name}">
+                                            <div class="card-body">
+                                                <h5 class="card-title">${game.name}</h5>
+                                                <p class="card-text">${game.category}</p>
+                                                <a href="#" class="btn btn-primary btn-play" data-iframe="${game.iframe}">Speel nu</a>
+                                                <a href="#" class="btn btn-secondary btn-fullscreen" data-iframe="${game.iframe}" title="Open in nieuw tabblad"><i class="fas fa-link"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                gamesList.innerHTML += gameCard;
+                            });
+                        });
+
+                        // Voeg event listener toe aan de "Speel nu" knoppen
+                        const playButtons = document.querySelectorAll('.btn-play');
+                        playButtons.forEach(button => {
+                            button.addEventListener('click', function(event) {
+                                event.preventDefault();
+                                const iframeUrl = this.getAttribute('data-iframe');
+                                openGamePopup(iframeUrl);
+                            });
+                        });
+
+                        // Voeg event listener toe aan de "Open in nieuw tabblad" knoppen
+                        const fullscreenButtons = document.querySelectorAll('.btn-fullscreen');
+                        fullscreenButtons.forEach(button => {
+                            button.addEventListener('click', function(event) {
+                                event.preventDefault();
+                                const iframeUrl = this.getAttribute('data-iframe');
+                                window.open(iframeUrl, '_blank');
+                            });
+                        });
+
+                        // Voeg event listener toe aan de dropdownmenu items om te scrollen naar de categorieën
+                        const dropdownItems = document.querySelectorAll('.dropdown-item');
+                        dropdownItems.forEach(item => {
+                            item.addEventListener('click', function(event) {
+                                event.preventDefault();
+                                const targetId = this.getAttribute('href').substring(1);
+                                const targetElement = document.getElementById(targetId);
+                                targetElement.scrollIntoView({ behavior: 'smooth' });
+                            });
+                        });
+
+                    } else {
+                        console.error('Failed to fetch games:', data.message);
+                    }
+                })
+                .catch(error => console.error('Error fetching games:', error));
+
+            // Functie om popup te openen met iframe
+            function openGamePopup(iframeUrl) {
+                const popupContent = `
+                    <div class="modal fade" id="gamePopup" tabindex="-1" aria-labelledby="gamePopupLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="gamePopupLabel">Speel nu</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <iframe src="${iframeUrl}" width="100%" height="500px"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', popupContent);
+                const gamePopup = new bootstrap.Modal(document.getElementById('gamePopup'));
+                gamePopup.show();
+                // Verwijder modal na sluiten
+                gamePopup._element.addEventListener('hidden.bs.modal', function () {
+                    document.getElementById('gamePopup').remove();
+                });
+            }
+
+            // Functie om "scroll to top" knop te tonen
+            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+            window.onscroll = function() {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                    scrollToTopBtn.style.display = "block";
+                } else {
+                    scrollToTopBtn.style.display = "none";
+                }
+            };
+
+            scrollToTopBtn.addEventListener('click', function() {
+                document.body.scrollTop = 0;
+                document.documentElement.scrollTop = 0;
+            });
+
+            // Functie om zoekpopup te openen
+            const searchButton = document.getElementById('searchButton');
+            const searchModal = new bootstrap.Modal(document.getElementById('searchModal'));
+            searchButton.addEventListener('click', function() {
+                searchModal.show();
+            });
+
+            // Functie om te zoeken
+            const searchInput = document.getElementById('searchInput');
+            const searchSubmitButton = document.getElementById('searchSubmitButton');
+            const debouncedSearch = debounce(function() {
+                performSearch();
+            }, 300); // 300ms debounce delay
+
+            searchInput.addEventListener('input', debouncedSearch);
+            searchSubmitButton.addEventListener('click', function() {
+                performSearch();
+            });
+
+            function performSearch() {
+                const query = searchInput.value;
+                if (query.length > 2) {
+                    fetch(`http://yixboost.nl.eu.org/yixboost/api/?q=${query}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                const searchResult = data.data.game; // Let op dat we hier een enkel game-object verwachten
+                                const searchResultsContainer = document.getElementById('searchResults');
+                                searchResultsContainer.innerHTML = '';
+
+                                if (!searchResult) {
+                                    searchResultsContainer.innerHTML = '<p>Geen resultaten gevonden</p>';
+                                } else {
+                                    const resultItem = `
+                                        <img src="${searchResult.image}" alt="${searchResult.name}" class="search-result-img" data-iframe="${searchResult.iframe}" title="${searchResult.name}">
+                                    `;
+                                    searchResultsContainer.innerHTML = resultItem;
+
+                                    // Voeg event listener toe aan de afbeelding in de zoekresultaten
+                                    const searchResultImage = document.querySelector('.search-result-img');
+                                    searchResultImage.addEventListener('click', function() {
+                                        const iframeUrl = this.getAttribute('data-iframe');
+                                        openGamePopup(iframeUrl);
+                                    });
+                                }
+                            } else {
+                                console.error('Failed to fetch search results:', data.message);
+                            }
+                        })
+                        .catch(error => console.error('Error fetching search results:', error));
+                }
+            }
+        });
+    </script>
+</body>
+</html>
